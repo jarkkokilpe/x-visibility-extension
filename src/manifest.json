@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "X Visibility Helper",
+  "version": "1.0",
+  "description": "Colors X posts by comment visibility opportunity.",
+  "permissions": ["storage"],
+  "content_scripts": [
+    {
+      "matches": ["*://*.twitter.com/*", "*://*.x.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
