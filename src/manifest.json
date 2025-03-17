@@ -3,7 +3,10 @@
   "name": "X Visibility Helper",
   "version": "1.0",
   "description": "Colors X posts by comment visibility opportunity.",
-  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": ["storage", "activeTab"],
   "content_scripts": [
     {
       "matches": ["*://*.twitter.com/*", "*://*.x.com/*"],

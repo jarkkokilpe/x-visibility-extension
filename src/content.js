@@ -2,6 +2,27 @@ let ratios = [];
 let saveTimeout = null;
 let lastPaint = 0;
 
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.action === "toggle") {
+    document.querySelectorAll('article').forEach(post => post.style.border = '');
+  }
+});
+
+// Inject CSS for smooth transitions (with !important)
+const style = document.createElement('style');
+style.textContent = `
+  article {
+    transition: border-color 0.9s ease !important;
+  }
+`;
+console.log("Attempting to inject style...");
+try {
+  document.head.appendChild(style);
+  console.log("Style injected successfully");
+} catch (e) {
+  console.log("Style injection failed:", e);
+}
+
 chrome.storage.local.get(['learnedRatios'], (result) => {
   ratios = result.learnedRatios || [];
   const cutoff = Date.now() - 86400000;
@@ -29,44 +50,57 @@ function paintTimeline() {
 
   const cutoff = Date.now() - 86400000;
   ratios = ratios.filter(r => r.time > cutoff);
-  
-  const sorted = ratios.map(r => r.value).sort((a, b) => a - b);
-  
-  document.querySelectorAll('article').forEach(post => {
-    const commentElement = post.querySelector('[data-testid="reply"]') || post.querySelector('span.r-1qa8mrt');
-    let comments = commentElement ? parseComments(commentElement.textContent) : null;
-    const likes = getMetric(post, '[data-testid="like"]', 0);
-    const retweets = getMetric(post, '[data-testid="retweet"]', 0);
-    const views = getViews(post);
-    const visibility = views !== null ? views : Math.max(likes + retweets, 1000);
 
-    let ratio, color;
-    if (!commentElement || (comments === null || comments === 0)) {
-      color = 'green';
-      ratio = Infinity;
-      console.log(`Post: Comments=0, Likes=${likes}, Retweets=${retweets}, Views=${views}, RawCommentText="${commentElement ? commentElement.textContent.trim() : 'N/A'}", Ratio=Infinity (Zero comments!)`);
-    } else {
-      comments = comments && !isNaN(comments) ? comments : 1;
-      ratio = Math.log10(visibility) / Math.log10(comments + 1);
-      const redThreshold = 1.5;
-      const greenThreshold = 2.5;
-      color = ratio < redThreshold ? 'red' : ratio > greenThreshold ? 'green' : 'yellow';
-      console.log(`Post: Comments=${comments}, Likes=${likes}, Retweets=${retweets}, Views=${views}, RawCommentText="${commentElement.textContent.trim()}", Ratio=${ratio.toFixed(2)} (Log scale)`);
-    }
+  // Check if we are on the main timeline (root or /home)
+  const path = window.location.pathname;
+  const isMainTimeline = path === '/' || path === '/home';
 
-    post.style.border = `3px solid ${color}`;
+  if (isMainTimeline) {
+    const sorted = ratios.map(r => r.value).sort((a, b) => a - b);
 
-    try {
-      ratios.push({ value: visibility / comments || Infinity, time: Date.now() });
-      if (ratios.length > 100) {
-        ratios.sort((a, b) => b.time - a.time);
-        ratios = ratios.slice(0, 100);
+    document.querySelectorAll('article').forEach(post => {
+      post.style.transition = 'border-color 0.9s ease';
+      const commentElement = post.querySelector('[data-testid="reply"]') || post.querySelector('span.r-1qa8mrt');
+      let comments = commentElement ? parseComments(commentElement.textContent) : null;
+      const likes = getMetric(post, '[data-testid="like"]', 0);
+      const retweets = getMetric(post, '[data-testid="retweet"]', 0);
+      const views = getViews(post);
+      const visibility = views !== null ? views : Math.max(likes + retweets, 1000);
+
+      let ratio, color;
+      if (!commentElement || (comments === null || comments === 0)) {
+        color = 'green';
+        ratio = Infinity;
+        console.log(`Post: Comments=0, Likes=${likes}, Retweets=${retweets}, Views=${views}, RawCommentText="${commentElement ? commentElement.textContent.trim() : 'N/A'}", Ratio=Infinity (Zero comments!)`);
+      } else {
+        comments = comments && !isNaN(comments) ? comments : 1;
+        ratio = Math.log10(visibility) / Math.log10(comments + 1);
+        const redThreshold = 2.5;
+        const greenThreshold = 3.5;
+        color = ratio < redThreshold ? 'red' : ratio > greenThreshold ? 'green' : 'yellow';
+        console.log(`Post: Comments=${comments}, Likes=${likes}, Retweets=${retweets}, Views=${views}, RawCommentText="${commentElement ? commentElement.textContent.trim() : 'N/A'}", Ratio=${ratio.toFixed(2)} (Log scale)`);
       }
-      saveRatios();
-    } catch (e) {
-      console.log("Push or save failed:", e);
-    }
-  });
+
+      post.style.border = `2px solid ${color}`;
+
+      try {
+        ratios.push({ value: visibility / comments || Infinity, time: Date.now() });
+        if (ratios.length > 100) {
+          ratios.sort((a, b) => b.time - a.time);
+          ratios = ratios.slice(0, 100);
+        }
+        saveRatios();
+      } catch (e) {
+        console.log("Push or save failed:", e);
+      }
+    });
+  } else {
+    // Clear borders on non-timeline pages
+    document.querySelectorAll('article').forEach(post => {
+      post.style.border = '';
+    });
+    console.log(`Not on main timeline (path: ${path}), borders cleared.`);
+  }
 }
 
 function getMetric(post, selector, defaultValue) {
