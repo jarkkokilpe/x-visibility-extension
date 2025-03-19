@@ -1,16 +1,26 @@
 {
   "manifest_version": 3,
-  "name": "X Visibility Helper",
+  "name": "X Comment Spotlight",
   "version": "1.0",
-  "description": "Colors X posts by comment visibility opportunity.",
-  "action": {
-    "default_popup": "popup.html"
-  },
+  "description": "Spotlights X posts with the best commenting opportunities! Not affiliated with or endorsed by X Corp.",
   "permissions": ["storage", "activeTab"],
+  "host_permissions": ["*://*.x.com/*"],
   "content_scripts": [
     {
-      "matches": ["*://*.twitter.com/*", "*://*.x.com/*"],
+      "matches": ["*://*.x.com/*"],
       "js": ["content.js"]
     }
-  ]
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  }
 }
