@@ -7,4 +7,4 @@ A Chrome extension that colors X posts based on comment visibility opportunity.
 3. Load in Chrome: `chrome://extensions/ > Load unpacked > select src/ folder`.
 
 ## Usage
-Scroll X to see posts framed in red (crowded), yellow (moderate), or green (prime comment spots).
+Scroll X to see posts framed in dark blue (crowded), semi-blue (moderate), or highlight blue (prime comment spots).
